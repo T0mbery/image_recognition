@@ -1,3 +1,4 @@
-= form_tag({action: :upload}, multipart: true) do
-  = file_field_tag 'image'
-  = submit_tag 'send'
+.center-block
+  = form_tag({action: :upload}, multipart: true) do
+    = file_field_tag 'image'
+    = submit_tag 'send'

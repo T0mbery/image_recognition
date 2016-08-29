@@ -1,2 +1,6 @@
-- if @image_path.present?
-  = image_tag @image_path
+.again
+  = link_to 'пробовать ещё', images_path
+
+.center-block
+  - if @detected_img_path.present?
+    = image_tag @detected_img_path
