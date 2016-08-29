@@ -2,5 +2,5 @@
   = link_to 'пробовать ещё', images_path
 
 .center-block
-  - if @detected_img_path.present?
-    = image_tag @detected_img_path
+  - if @img_path.present?
+    = image_tag @img_path
