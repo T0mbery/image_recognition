@@ -3,6 +3,23 @@
   text-align: center;
 }
 
-a {
-  font-size: 25px;
+.cards {
+  display: flex;
+}
+
+.card {
+  flex: 1 0 25%;
+  flex-flow: row wrap;
+  justify-content: space-around;
+  position: relative;
+}
+
+.send_foto {
+  margin-top: 100px;
+}
+
+.remove_foto {
+  position: absolute;
+  bottom: -25px;
+  left: 40%;
 }

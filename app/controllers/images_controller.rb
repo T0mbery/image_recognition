@@ -1,6 +1,18 @@
 class ImagesController < ApplicationController
   
   def index
+    @images = Image.all
+  end
+  
+  def create
+    @image = Image.create(image_params)
+    redirect_to action: 'index'
+  end
+  
+  def destroy
+    @image = Image.find(params[:id])
+    @image.destroy
+    redirect_to action: 'index'
   end
 
   def upload
@@ -18,6 +30,12 @@ class ImagesController < ApplicationController
     else
       redirect_to action: 'index'
     end
+  end
+  
+  private
+
+  def image_params
+    params.permit(:foto)
   end
 
 end

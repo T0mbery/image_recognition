@@ -1,4 +1,12 @@
 .center-block
-  = form_tag({action: :upload}, multipart: true) do
-    = file_field_tag 'image'
+  .cards
+    - if @images.exists?
+      - @images.each do |img|
+        .card
+          = image_tag img.foto.recognition.url
+          = form_tag(img, method: 'delete', class: 'remove_foto') do
+            = submit_tag 'remove'
+        
+  = form_tag(images_path, multipart: true, class: 'send_foto') do
+    = file_field_tag 'foto'
     = submit_tag 'send'
