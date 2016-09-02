@@ -20,7 +20,7 @@ class FotoUploader < CarrierWave::Uploader::Base
   # end
   
   version :thumb do
-    process resize_to_fit: [200, 200]
+    process resize_to_fit: [300, 300]
   end
   
   version :recognition, from_version: :thumb do
@@ -34,7 +34,7 @@ class FotoUploader < CarrierWave::Uploader::Base
   private
 
   def img_recognition
-    system("python #{Rails.root}/lib/tasks/image_recognition.py #{self.file.file}")
+    system("python #{Rails.root}/lib/tasks/image_recognition.py #{self.file.file} #{Rails.root}")
   end
 
 end
