@@ -14,6 +14,10 @@ gem 'ruby-opencv'
 gem 'carrierwave'
 gem 'mini_magick'
 
+gem 'backbone-rails'
+gem 'evrobone'
+gem 'bourbon'
+
 group :development, :test do
   gem 'byebug', platform: :mri
 end

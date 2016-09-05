@@ -3,7 +3,7 @@
     - if @images.exists?
       - @images.each do |img|
         .card
-          = image_tag img.foto.recognition.url
+          = image_tag img.foto.recognition.url, class: 'js-card'
           = form_tag(img, method: 'delete', class: 'remove_foto') do
             = submit_tag 'remove'
         
