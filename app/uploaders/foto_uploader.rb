@@ -3,6 +3,9 @@
 class FotoUploader < CarrierWave::Uploader::Base
   include CarrierWave::MiniMagick
 
+  class FaceIsNotDetected  < StandardError; end
+  class DetectionAlgorithm < StandardError; end
+
   storage :file
 
   process resize_to_fit: [600, 600]
@@ -34,7 +37,12 @@ class FotoUploader < CarrierWave::Uploader::Base
   private
 
   def img_recognition
-    system("python #{Rails.root}/lib/tasks/image_recognition.py #{self.file.file} #{Rails.root}")
+    out, err, st = Open3.capture3("python #{Rails.root}/lib/tasks/image_recognition.py #{self.file.file} #{Rails.root}")
+    if out.chomp == 'face is not detected'
+      raise FaceIsNotDetected
+    elsif err.present?
+      raise DetectionAlgorithm
+    end
   end
 
 end

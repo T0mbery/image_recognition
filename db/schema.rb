@@ -17,8 +17,9 @@ ActiveRecord::Schema.define(version: 20160901062201) do
 
   create_table "images", force: :cascade do |t|
     t.string   "foto"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.jsonb    "colorizer_result"
+    t.datetime "created_at",       null: false
+    t.datetime "updated_at",       null: false
   end
 
 end

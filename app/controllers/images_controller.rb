@@ -4,8 +4,21 @@ class ImagesController < ApplicationController
     @images = Image.all
   end
   
+  def show
+    @image = Image.find(params[:id])
+    respond_to do |format|
+      format.html {  }
+    end
+  end
+  
   def create
-    @image = Image.create(image_params)
+    begin
+      @image = Image.create(image_params)
+    rescue FotoUploader::FaceIsNotDetected
+      flash[:notice] = 'Не удалось распознать лицо'
+    rescue FotoUploader::DetectionAlgorithm
+      flash[:notice] = 'Не удалось распознать контур.'
+    end
     redirect_to action: 'index'
   end
   
@@ -13,23 +26,6 @@ class ImagesController < ApplicationController
     @image = Image.find(params[:id])
     @image.destroy
     redirect_to action: 'index'
-  end
-
-  def upload
-    if image = params[:image]
-      image_name           = image.original_filename
-      origin_img_path      = Rails.root.join('app', 'assets', 'images', 'origin',      image_name)
-      recognition_img_path = Rails.root.join('app', 'assets', 'images', 'recognition', image_name)
-      
-      File.open(origin_img_path, 'wb') do |file|
-        file.write(image.read)
-      end
-      
-      @img_path = 'recognition/' + image_name
-      system("python #{Rails.root}/lib/tasks/image_recognition.py #{image_name} #{origin_img_path} #{recognition_img_path}")
-    else
-      redirect_to action: 'index'
-    end
   end
   
   private

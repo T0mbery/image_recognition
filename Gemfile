@@ -13,6 +13,8 @@ gem 'haml-rails'
 gem 'ruby-opencv'
 gem 'carrierwave'
 gem 'mini_magick'
+gem 'typhoeus'
+
 
 gem 'backbone-rails'
 gem 'evrobone'

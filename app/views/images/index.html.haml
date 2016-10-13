@@ -1,4 +1,7 @@
 .center-block
+  .flash= flash[:notice]
+  %br
+  %br
   .cards
     - if @images.exists?
       - @images.each do |img|
