@@ -5,10 +5,6 @@ class ImagesController < ApplicationController
   end
   
   def show
-    @image = Image.find(params[:id])
-    respond_to do |format|
-      format.html {  }
-    end
   end
   
   def create
@@ -20,6 +16,14 @@ class ImagesController < ApplicationController
       flash[:notice] = 'Не удалось распознать контур.'
     end
     redirect_to action: 'index'
+  end
+  
+  def update
+    if params[:id] = 'all'
+      Image.find_each do |img|
+        img.foto.recreate_versions!
+      end
+    end
   end
   
   def destroy

@@ -13,3 +13,6 @@
   = form_tag(images_path, multipart: true, class: 'send_foto') do
     = file_field_tag 'foto'
     = submit_tag 'send'
+
+  = form_tag(image_path('all'), multipart: true, class: 'send_foto', method: 'patch') do
+    = submit_tag 'reload images'

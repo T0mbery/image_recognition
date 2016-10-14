@@ -8,18 +8,20 @@ app_path = sys.argv[2]
 def face_detect(path):
     img = cv2.imread(path)
     cascade = cv2.CascadeClassifier(str(app_path) + "/lib/tasks/haarcascade_frontalface_alt.xml")
+    eye_cascade = cv2.CascadeClassifier(str(app_path) + "/lib/tasks/haarcascade_eye.xml")
     face_rect = cascade.detectMultiScale(img, 1.1, 1, cv2.cv.CV_HAAR_SCALE_IMAGE, (10,10))
+    eye_rect = cascade.detectMultiScale(img, 1.1, 1, cv2.cv.CV_HAAR_SCALE_IMAGE, (10,10))
     if len(face_rect) < 1: print("face is not detected")
-    
+
     if len(face_rect) == 0:
         return [], img
-    
+
     face_rect[:, 2:] += face_rect[:, :2]
     return face_rect, img
 
 def box(face_rect, img):
     img_height, img_width = img.shape[:2]
-    
+
     # x, y - coordinate left top box coner
     # w, y - coordinate right top box coner
     # h, y - coordinate left bottom box coner
@@ -70,15 +72,15 @@ def average_color(coordinates, img):
         blue.append(b)
         green.append(g)
         red.append(r)
-    
+
     average_blue  = (sum(blue)  / len(blue))  if len(blue) != 0 else 0
     average_green = (sum(green) / len(green)) if len(green) != 0 else 0
     average_red   = (sum(red)   / len(red))   if len(red) != 0 else 0
-    
+
     return [average_blue, average_green, average_red]
 
 def colorizer(y_top, y_bot, width, img):
-    
+
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
     BLACK  = []
@@ -97,7 +99,7 @@ def colorizer(y_top, y_bot, width, img):
             H = hsv[y, x][0]
             S = hsv[y, x][1]
             V = hsv[y, x][2]
-        
+
             if (V < 75):
                 BLACK.append([y,x])
             elif (V > 190 and S < 27):
@@ -133,34 +135,23 @@ def colorizer(y_top, y_bot, width, img):
     average_aqua   = average_color(AQUA,   img)
     average_blue   = average_color(BLUE,   img)
     average_purple = average_color(PURPLE, img)
-    
-    
-    size = len(BLACK)+len(WHITE)+len(GREY)+len(RED)+len(ORANGE)+len(YELLOW)+len(GREEN)+len(AQUA)+len(BLUE)+len(PURPLE)
 
-    print 'black - '  + str(len(BLACK))  + ' : ' + str(average_black)  + ' : ' + str(round((float(len(BLACK))/float(size))*100))
-    print 'white - '  + str(len(WHITE))  + ' : ' + str(average_white)  + ' : ' + str(round((float(len(WHITE))/float(size))*100))
-    print 'grey - '   + str(len(GREY))   + ' : ' + str(average_grey)   + ' : ' + str(round((float(len(GREY))/float(size))*100))
-    print 'red - '    + str(len(RED))    + ' : ' + str(average_red)    + ' : ' + str(round((float(len(RED))/float(size))*100))
-    print 'orange - ' + str(len(ORANGE)) + ' : ' + str(average_orange) + ' : ' + str(round((float(len(ORANGE))/float(size))*100))
-    print 'yellow - ' + str(len(YELLOW)) + ' : ' + str(average_yellow) + ' : ' + str(round((float(len(YELLOW))/float(size))*100))
-    print 'green - '  + str(len(GREEN))  + ' : ' + str(average_green)  + ' : ' + str(round((float(len(GREEN))/float(size))*100))
-    print 'aqua - '   + str(len(AQUA))   + ' : ' + str(average_aqua)   + ' : ' + str(round((float(len(AQUA))/float(size))*100))
-    print 'blue - '   + str(len(BLUE))   + ' : ' + str(average_blue)   + ' : ' + str(round((float(len(BLUE))/float(size))*100))
-    print 'purple - ' + str(len(PURPLE)) + ' : ' + str(average_purple) + ' : ' + str(round((float(len(PURPLE))/float(size))*100))
+
+    size = len(BLACK)+len(WHITE)+len(GREY)+len(RED)+len(ORANGE)+len(YELLOW)+len(AQUA)+len(BLUE)+len(PURPLE)
 
     colors = {
-        'black':  [round((float(len(BLACK))/float(size))*100),  len(BLACK),  average_black],
-        'white':  [round((float(len(WHITE))/float(size))*100),  len(WHITE),  average_white],
-        'grey':   [round((float(len(GREY))/float(size))*100),   len(GREY),   average_grey],
-        'red':    [round((float(len(RED))/float(size))*100),    len(RED),    average_red],
-        'orange': [round((float(len(ORANGE))/float(size))*100), len(ORANGE), average_orange],
-        'yellow': [round((float(len(YELLOW))/float(size))*100), len(YELLOW), average_yellow],
-        'green':  [round((float(len(GREEN))/float(size))*100),  len(GREEN),  average_green],
-        'aqua':   [round((float(len(AQUA))/float(size))*100),   len(AQUA),   average_aqua],
-        'blue':   [round((float(len(BLUE))/float(size))*100),   len(BLUE),   average_blue],
-        'purple': [round((float(len(PURPLE))/float(size))*100), len(PURPLE), average_purple]
+        'black':  [round((float(len(BLACK))/float(size))*100, 1),  len(BLACK),  average_black],
+        'white':  [round((float(len(WHITE))/float(size))*100, 1),  len(WHITE),  average_white],
+        'grey':   [round((float(len(GREY))/float(size))*100, 1),   len(GREY),   average_grey],
+        'red':    [round((float(len(RED))/float(size))*100, 1),    len(RED),    average_red],
+        'orange': [round((float(len(ORANGE))/float(size))*100, 1), len(ORANGE), average_orange],
+        'yellow': [round((float(len(YELLOW))/float(size))*100, 1), len(YELLOW), average_yellow],
+        # 'green':  [round((float(len(GREEN))/float(size))*100, 1),  len(GREEN),  average_green],
+        'aqua':   [round((float(len(AQUA))/float(size))*100, 1),   len(AQUA),   average_aqua],
+        'blue':   [round((float(len(BLUE))/float(size))*100, 1),   len(BLUE),   average_blue],
+        'purple': [round((float(len(PURPLE))/float(size))*100, 1), len(PURPLE), average_purple]
     }
-    
+
     sort_colors = sorted(colors.iteritems(), key=lambda (k,v): (v,k))[::-1]
 
     return sort_colors, colors
@@ -168,53 +159,67 @@ def colorizer(y_top, y_bot, width, img):
 for x, y, w, h in [list(body_rect)]:
 
     # y - is bottom coordinate from face box
-    if (img_height - y) < (y + int(round(head_height*3))):
+    if (img_height - y) < (int(round(head_height*2.9))):
         sort_top, top = colorizer(y, img_height, img_width, final)
         sort_bottom = 0
         sort_shoes = 0
     else:
-        if (img_height - y) < (y + int(round(head_height*5.0))):
-            sort_top, top = colorizer(y, (y + int(round(head_height*3))), img_width, final)
-            sort_bottom, bottom = colorizer((y + int(round(head_height*3))), img_height, img_width, final)
+        if (img_height - y) < (int(round(head_height*6.8))):
+            sort_top, top = colorizer(y, (y + int(round(head_height*2.9))), img_width, final)
+            sort_bottom, bottom = colorizer((y + int(round(head_height*2.9))), img_height, img_width, final)
             sort_shoes = 0
         else:
-            sort_top, top = colorizer(y, (y + int(round(head_height*3))), img_width, final)
-            sort_bottom, bottom = colorizer((y + int(round(head_height*3))), (y + int(round(head_height*6.3))), img_width, final)
-            sort_shoes, shoes = colorizer((y + int(round(head_height*5.0))), img_height, img_width, final)
-           
-           
-           
+            sort_top, top = colorizer(y, (y + int(round(head_height*2.9))), img_width, final)
+            sort_bottom, bottom = colorizer((y + int(round(head_height*2.9))), (y + int(round(head_height*6.8))), img_width, final)
+            sort_shoes, shoes = colorizer((y + int(round(head_height*6.8))), img_height, img_width, final)
+
     padding_top = 28
-                    
+
     for color_obj in sort_top:
+
+        cv2.line(img, (1, y), (img_width, y), (114, 255, 0), 1)
+
         k = color_obj[0]
-        if k in ['green', 'orange'] or top[k][0] < 1.7:
+        if k in ['green', 'orange'] or top[k][0] < 5.0 or ((k == 'red' and (-22 <= top[k][0] - top['orange'][0] <= 22) and (-22 <= top[k][1] - top['orange'][1] <= 22) and (-22 <= top[k][2] - top['orange'][2] <= 22))):
             continue
         else:
+            cv2.circle(img, (img_width-22, y+padding_top), 10, (180, 250, 255), -1)
             cv2.circle(img, (img_width-22, y+padding_top), 8, top[k][2], -1)
             padding_top += 26
 
     if sort_bottom:
         padding_top = 24
         for color_obj in sort_bottom:
+
+            cv2.line(img, (1, y + int(round(head_height*2.9))), (img_width, y + int(round(head_height*2.9))), (114, 255, 0), 1)
+
             k = color_obj[0]
-            if k in ['green', 'orange'] or bottom[k][0] < 2.0:
+            if k in ['green', 'orange'] or bottom[k][0] < 5.0:
                 continue
             else:
-                cv2.circle(img, (img_width-22, y + int(round(head_height*2.8)) + padding_top), 8, bottom[k][2], -1)
+                cv2.circle(img, (img_width-22, y + int(round(head_height*2.9)) + padding_top), 10, (180, 250, 255), -1)
+                cv2.circle(img, (img_width-22, y + int(round(head_height*2.9)) + padding_top), 8, bottom[k][2], -1)
                 padding_top += 26
 
     if sort_shoes:
         padding_top = 28
         for color_obj in sort_shoes:
+
+            cv2.line(img, (1, y + int(round(head_height*6.8))), (img_width, y + int(round(head_height*6.8))), (114, 255, 0), 1)
+
             k = color_obj[0]
-            if k in ['green', 'orange'] or shoes[k][0] < 2.0:
+            if k in ['green', 'orange'] or shoes[k][0] < 5.0:
                 continue
             else:
-                cv2.circle(img, (img_width-22, y + int(round(head_height*5.0)) + padding_top), 8, shoes[k][2], -1)
+                cv2.circle(img, (img_width-22, y + int(round(head_height*6.8)) + padding_top), 10, (180, 250, 255), -1)
+                cv2.circle(img, (img_width-22, y + int(round(head_height*6.8)) + padding_top), 8, shoes[k][2], -1)
                 padding_top += 26
 
+    for x1, y1, x2, y2 in [np.array(face_rect.tolist()[0])]:
+        cv2.rectangle(img, (x1, y1), (x2, y2), (127, 255, 0), 1)
 
     cv2.imwrite(str(img_path), img)
 
-
+    file = open('/Users/tom/work/recognition-images/test11.txt', 'w')
+    file.write(str(top))
+    file.close()

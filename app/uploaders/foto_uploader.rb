@@ -23,7 +23,7 @@ class FotoUploader < CarrierWave::Uploader::Base
   # end
   
   version :thumb do
-    process resize_to_fit: [300, 300]
+    process resize_to_fit: [540, 540]
   end
   
   version :recognition, from_version: :thumb do
