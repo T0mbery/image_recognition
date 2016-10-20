@@ -11,7 +11,7 @@ class App.Views.Images extends App.View
     recognition_img_src  = card.attr('src')
     recognition_img_src_split = recognition_img_src.split('/')
     recognition_img_name = recognition_img_src_split[5].split('_')
-    recognition_img_name[0] = 'thumb'
+    recognition_img_name[0] = 'contour'
     
     thumb_img_name_join = recognition_img_name.join('_')
     recognition_img_src_split[5] = thumb_img_name_join

@@ -27,7 +27,11 @@ class FotoUploader < CarrierWave::Uploader::Base
   end
   
   version :recognition, from_version: :thumb do
-    process :img_recognition
+    process img_recognition: ['colors']
+  end
+
+  version :contour, from_version: :thumb do
+    process img_recognition: ['contour']
   end
   
   def extension_white_list
@@ -36,8 +40,8 @@ class FotoUploader < CarrierWave::Uploader::Base
   
   private
 
-  def img_recognition
-    out, err, st = Open3.capture3("python #{Rails.root}/lib/tasks/image_recognition.py #{self.file.file} #{Rails.root}")
+  def img_recognition(contour)
+    out, err, st = Open3.capture3("python #{Rails.root}/lib/tasks/image_recognition.py #{self.file.file} #{Rails.root} #{contour}")
     if out.chomp == 'face is not detected'
       raise FaceIsNotDetected
     elsif err.present?
