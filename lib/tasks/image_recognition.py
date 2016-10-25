@@ -6,6 +6,9 @@ img_path = sys.argv[1]
 app_path = sys.argv[2]
 contour  = sys.argv[3]
 
+all_colors = ['black', 'white', 'grey', 'red', 'orange', 'yellow', 'aqua', 'blue', 'purple']
+
+
 def face_detect(path):
     img = cv2.imread(path)
     cascade = cv2.CascadeClassifier(str(app_path) + "/lib/tasks/haarcascade_frontalface_alt.xml")
@@ -19,6 +22,7 @@ def face_detect(path):
 
     face_rect[:, 2:] += face_rect[:, :2]
     return face_rect, img
+
 
 def box(face_rect, img):
     img_height, img_width = img.shape[:2]
@@ -41,31 +45,6 @@ def box(face_rect, img):
     return body_rect, head_width, head_height, img_height, img_width
 
 
-face_rect, img = face_detect(str(img_path))
-body_rect, head_width, head_height, img_height, img_width = box(face_rect, img)
-
-bgdModel = np.zeros((1,65), np.float64)
-fgdModel = np.zeros((1,65), np.float64)
-
-mask = np.zeros(img.shape[:2], np.uint8)
-
-cv2.grabCut(img, mask, body_rect, bgdModel, fgdModel, 4, cv2.GC_INIT_WITH_RECT)
-mask2 = np.where((mask==2)|(mask==0), 0, 1).astype('uint8')
-
-img1 = img*mask2[:,:,np.newaxis]
-
-background = img - img1
-background[np.where((background > [0,0,0]).all(axis = 2))] = [0,255,0]
-
-
-final = background + img1
-
-all_colors = ['black', 'white', 'grey', 'red', 'orange', 'yellow', 'aqua', 'blue', 'purple']
-
-if contour == 'contour':
-    cv2.imwrite(str(img_path), final)
-    sys.exit()
-
 def average_color(coordinates, img):
     color_array = []
     for y, x in coordinates:
@@ -80,13 +59,14 @@ def average_color(coordinates, img):
         green.append(g)
         red.append(r)
 
-    average_blue  = (sum(blue)  / len(blue))  if len(blue) != 0 else 0
+    average_blue  = (sum(blue)  / len(blue))  if len(blue)  != 0 else 0
     average_green = (sum(green) / len(green)) if len(green) != 0 else 0
-    average_red   = (sum(red)   / len(red))   if len(red) != 0 else 0
+    average_red   = (sum(red)   / len(red))   if len(red)   != 0 else 0
 
     return [average_blue, average_green, average_red]
 
-def colorizer(y_top, y_bot, width, img):
+
+def colorizer(y_top, y_bot, width, img, bg_color):
 
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
@@ -144,30 +124,66 @@ def colorizer(y_top, y_bot, width, img):
     average_purple = average_color(PURPLE, img)
 
 
-    size = len(BLACK)+len(WHITE)+len(GREY)+len(RED)+len(ORANGE)+len(YELLOW)+len(AQUA)+len(BLUE)+len(PURPLE) #+len(GREEN)
+    size = len(BLACK)+len(WHITE)+len(GREY)+len(RED)+len(ORANGE)+len(YELLOW)+len(AQUA)+len(BLUE)+len(PURPLE)+len(GREEN) - ( len(eval(bg_color.upper())) if bg_color else 0 )
 
     colors = {
-        'black':  [round((float(len(BLACK))/float(size))*100, 1),  len(BLACK),  average_black],
-        'white':  [round((float(len(WHITE))/float(size))*100, 1),  len(WHITE),  average_white],
-        'grey':   [round((float(len(GREY))/float(size))*100, 1),   len(GREY),   average_grey],
-        'red':    [round((float(len(RED))/float(size))*100, 1),    len(RED),    average_red],
-        'orange': [round((float(len(ORANGE))/float(size))*100, 1), len(ORANGE), average_orange],
-        'yellow': [round((float(len(YELLOW))/float(size))*100, 1), len(YELLOW), average_yellow],
-       # 'green':  [round((float(len(GREEN))/float(size))*100, 1),  len(GREEN),  average_green],
-        'aqua':   [round((float(len(AQUA))/float(size))*100, 1),   len(AQUA),   average_aqua],
-        'blue':   [round((float(len(BLUE))/float(size))*100, 1),   len(BLUE),   average_blue],
-        'purple': [round((float(len(PURPLE))/float(size))*100, 1), len(PURPLE), average_purple]
+        'black':  [round((float(len(BLACK))/float(size))*100, 1),  len(BLACK),  average_black, [0,0,0]],
+        'white':  [round((float(len(WHITE))/float(size))*100, 1),  len(WHITE),  average_white, [255,255,255]],
+        'grey':   [round((float(len(GREY))/float(size))*100, 1),   len(GREY),   average_grey, [100,100,100]],
+        'red':    [round((float(len(RED))/float(size))*100, 1),    len(RED),    average_red, [0,0,255]],
+        'orange': [round((float(len(ORANGE))/float(size))*100, 1), len(ORANGE), average_orange, [0,200,255]],
+        'yellow': [round((float(len(YELLOW))/float(size))*100, 1), len(YELLOW), average_yellow, [0,255,255]],
+        'green':  [round((float(len(GREEN))/float(size))*100, 1),  len(GREEN),  average_green, [0,255,0]],
+        'aqua':   [round((float(len(AQUA))/float(size))*100, 1),   len(AQUA),   average_aqua, [255,255,0]],
+        'blue':   [round((float(len(BLUE))/float(size))*100, 1),   len(BLUE),   average_blue, [255,0,0]],
+        'purple': [round((float(len(PURPLE))/float(size))*100, 1), len(PURPLE), average_purple, [255,0,200]]
     }
+
+    if bg_color:
+        del(colors[bg_color.lower()])
 
     sort_colors = sorted(colors.iteritems(), key=lambda (k,v): (v,k))[::-1]
 
     return sort_colors, colors
+
+
+
+face_rect, img = face_detect(str(img_path))
+body_rect, head_width, head_height, img_height, img_width = box(face_rect, img)
+
+bgdModel = np.zeros((1,65), np.float64)
+fgdModel = np.zeros((1,65), np.float64)
+
+mask = np.zeros(img.shape[:2], np.uint8)
+
+cv2.grabCut(img, mask, body_rect, bgdModel, fgdModel, 4, cv2.GC_INIT_WITH_RECT)
+mask2 = np.where((mask==2)|(mask==0), 0, 1).astype('uint8')
+
+img1 = img*mask2[:,:,np.newaxis]
+
+for x, y, w, h in [list(body_rect)]:
+    img1_sort_colors, _ = colorizer(y, img_height, img_width, img1, 0)
+    bg_color = img1_sort_colors[-1][0]
+    bgr_bg_color = img1_sort_colors[-1][1][3]
+
+background = img - img1
+background[np.where((background > [0,0,0]).all(axis = 2))] = bgr_bg_color
+
+final = background + img1
+
+
+if contour == 'contour':
+    cv2.imwrite(str(img_path), final)
+    sys.exit()
+
 
 def is_similar_color(comparable_color_name, benchmark_color_name):
     if ((-15 <= (comparable_color_name[0] - benchmark_color_name[0]) <= 15) and (-15 <= (comparable_color_name[1] - benchmark_color_name[1]) <= 15) and (-15 <= (comparable_color_name[2] - benchmark_color_name[2]) <= 15)):
         return True
     else:
         return False
+
+
 def is_skin_color(color_b_g_r):
     skin_color = [140, 160, 210]
     if ((-25 <= color_b_g_r[0] - skin_color[0] <= 25) and (-25 <= color_b_g_r[1] - skin_color[1] <= 25) and (-25 <= color_b_g_r[2] - skin_color[2] <= 25)):
@@ -175,26 +191,52 @@ def is_skin_color(color_b_g_r):
     else:
         return False
 
+
 def bordering_color(img, y):
 
     bordering_colors = []
     top_border       = y - 10
     bottom_border    = y + 10
 
-    sort_top_range, top_range = colorizer(top_border, y, img_width, img)
-    sort_bottom_range, bottom_range = colorizer(y, bottom_border, img_width, img)
+    sort_top_range, top_range = colorizer(top_border, y, img_width, img, bg_color)
+    sort_bottom_range, bottom_range = colorizer(y, bottom_border, img_width, img, bg_color)
 
-    for color in all_colors:
-        if is_similar_color(top_range[color][2], bottom_range[color][2]):
+    colors = [item for item in all_colors if item not in bg_color]
+    for color in colors:
+        if top_range[color][0] != 0 and bottom_range[color][0] != 0 and (is_similar_color(top_range[color][2], bottom_range[color][2])):
             bordering_colors.append(color)
 
     return bordering_colors
 
-def is_continue_condition(colors, color_name):
+
+def colors_for_skipping(img, y, top_colors, bottom_colors, side):
+
+    skipping_colors = []
+
+    if not bottom_colors:
+        return skipping_colors
+
+    bordering_colors = bordering_color(img, y)
+
+    for b_color in bordering_colors:
+        if ((side == 'top') and ((bottom_colors[b_color][1] / top_colors[b_color][1]) >= 4)) or \
+            ((side == 'bottom') and (top_colors[b_color][1] / bottom_colors[b_color][1] >= 4)):
+            skipping_colors.append(b_color)
+
+    return skipping_colors
+
+
+def is_continue_condition(img, y, top_colors, bottom_colors, color_name, side):
+
+    if side == 'top':
+        colors = top_colors
+    else:
+        colors = bottom_colors
+
     if colors[color_name][0] < 5.0 or \
         (color_name == 'red' and is_similar_color(colors[color_name][2], colors['orange'][2])) or \
         (color_name == 'orange' and is_skin_color(colors['orange'][2])) or \
-        ():
+        (color_name in colors_for_skipping(img, y, top_colors, bottom_colors, side)):
         return True
     else:
         return False
@@ -204,24 +246,23 @@ for x, y, w, h in [list(body_rect)]:
 
     height_till_belt   = int(round(head_height*2.9))
     height_till_shoes  = int(round(head_height*6.8))
-
     y_coordinate_belt  = y + height_till_belt
     y_coordinate_shoes = y + height_till_shoes
 
     # y - is bottom coordinate from face box
     if (img_height - y) < height_till_belt:
-        sort_top, top = colorizer(y, img_height, img_width, final)
-        sort_bottom = 0
+        sort_top, top = colorizer(y, img_height, img_width, final, bg_color)
+        sort_bottom, bottom = 0, False
         sort_shoes = 0
     else:
         if (img_height - y) < height_till_shoes:
-            sort_top, top = colorizer(y, y_coordinate_belt, img_width, final)
-            sort_bottom, bottom = colorizer(y_coordinate_belt, img_height, img_width, final)
-            sort_shoes = 0
+            sort_top, top = colorizer(y, y_coordinate_belt, img_width, final, bg_color)
+            sort_bottom, bottom = colorizer(y_coordinate_belt, img_height, img_width, final, bg_color)
+            sort_shoes, shoes = 0, False
         else:
-            sort_top, top = colorizer(y, y_coordinate_belt, img_width, final)
-            sort_bottom, bottom = colorizer(y_coordinate_belt, y_coordinate_shoes, img_width, final)
-            sort_shoes, shoes = colorizer(y_coordinate_shoes, img_height, img_width, final)
+            sort_top, top = colorizer(y, y_coordinate_belt, img_width, final, bg_color)
+            sort_bottom, bottom = colorizer(y_coordinate_belt, y_coordinate_shoes, img_width, final, bg_color)
+            sort_shoes, shoes = colorizer(y_coordinate_shoes, img_height, img_width, final, bg_color)
 
     padding_top = 28
 
@@ -232,7 +273,7 @@ for x, y, w, h in [list(body_rect)]:
         cv2.line(img, (x+w, y), (x+w, img_height), (114, 255, 0), 1)
 
         k = color_obj[0]
-        if is_continue_condition(top, k):
+        if is_continue_condition(final, y_coordinate_belt, top, bottom, k, 'top'):
             continue
         else:
             cv2.circle(img, (img_width-22, y+padding_top), 10, (180, 250, 255), -1)
@@ -246,7 +287,8 @@ for x, y, w, h in [list(body_rect)]:
             cv2.line(img, (1, y_coordinate_belt), (img_width, y_coordinate_belt), (114, 255, 0), 1)
 
             k = color_obj[0]
-            if is_continue_condition(bottom, k):
+            if is_continue_condition(final, y_coordinate_shoes, bottom, shoes, k, 'top') or \
+                is_continue_condition(final, y_coordinate_belt, top, bottom, k, 'bottom'):
                 continue
             else:
                 cv2.circle(img, (img_width-22, y_coordinate_belt + padding_top), 10, (180, 250, 255), -1)
@@ -260,7 +302,7 @@ for x, y, w, h in [list(body_rect)]:
             cv2.line(img, (1, y_coordinate_shoes), (img_width, y_coordinate_shoes), (114, 255, 0), 1)
 
             k = color_obj[0]
-            if is_continue_condition(shoes, k):
+            if is_continue_condition(final, y_coordinate_shoes, bottom, shoes, k, 'bottom'):
                 continue
             else:
                 cv2.circle(img, (img_width-22, y_coordinate_shoes + padding_top), 10, (180, 250, 255), -1)
