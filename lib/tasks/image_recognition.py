@@ -1,20 +1,48 @@
 import cv2
 import numpy as np
 import sys
+import math
+import httplib, urllib, base64
 
 img_path = sys.argv[1]
 app_path = sys.argv[2]
 contour  = sys.argv[3]
+img_url  = sys.argv[4]
+root_url = sys.argv[5]
 
-all_colors = ['black', 'white', 'grey', 'red', 'orange', 'yellow', 'aqua', 'blue', 'purple']
+full_img_url = root_url + img_url
 
+all_colors = ['black', 'white', 'grey', 'red', 'orange', 'yellow', 'green', 'aqua', 'blue', 'purple']
+
+headers = {
+    # Request headers
+    'Content-Type': 'application/json',
+    'Ocp-Apim-Subscription-Key': '{bd979bf9355040f7a8358922aa951ac6}',
+}
+
+params = urllib.urlencode({
+    # Request parameters
+    'visualFeatures': 'Categories',
+    'details': '{string}',
+    'language': 'en',
+})
+
+try:
+    conn = httplib.HTTPSConnection('api.projectoxford.ai')
+    conn.request("POST", "/vision/v1.0/analyze?%s" % params, "{body}", headers)
+    response = conn.getresponse()
+    data = response.read()
+    print(data)
+    conn.close()
+except Exception as e:
+    print("[Errno {0}] {1}".format(e.errno, e.strerror))
 
 def face_detect(path):
     img = cv2.imread(path)
     cascade = cv2.CascadeClassifier(str(app_path) + "/lib/tasks/haarcascade_frontalface_alt.xml")
-    eye_cascade = cv2.CascadeClassifier(str(app_path) + "/lib/tasks/haarcascade_eye.xml")
+    # eye_cascade = cv2.CascadeClassifier(str(app_path) + "/lib/tasks/haarcascade_eye.xml")
     face_rect = cascade.detectMultiScale(img, 1.1, 1, cv2.cv.CV_HAAR_SCALE_IMAGE, (10,10))
-    eye_rect = cascade.detectMultiScale(img, 1.1, 1, cv2.cv.CV_HAAR_SCALE_IMAGE, (10,10))
+    # eye_rect = cascade.detectMultiScale(img, 1.1, 1, cv2.cv.CV_HAAR_SCALE_IMAGE, (10,10))
     if len(face_rect) < 1: print("face is not detected")
 
     if len(face_rect) == 0:
@@ -36,11 +64,8 @@ def box(face_rect, img):
         body_width    = int(round(head_width*2.33))
         x_face_center = x + head_width/2
         left_padding  = int(round(x_face_center - (head_height*1.2))) #int(round(body_width/1.6))
-#        left_padding = (img_width - body_width)/2
 
-#        print(head_width, body_width, left_padding)
-
-        body_rect = (left_padding, h, body_width, (img_height-h))
+        body_rect     = (left_padding, h, body_width, (img_height-h))
 
     return body_rect, head_width, head_height, img_height, img_width
 
@@ -70,16 +95,17 @@ def colorizer(y_top, y_bot, width, img, bg_color):
 
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
-    BLACK  = []
-    WHITE  = []
-    GREY   = []
-    RED    = []
-    ORANGE = []
-    YELLOW = []
-    GREEN  = []
-    AQUA   = []
-    BLUE   = []
-    PURPLE = []
+    BLACK           = []
+    WHITE           = []
+    GREY            = []
+    RED             = []
+    ORANGE          = []
+    YELLOW          = []
+    GREEN           = []
+    AQUA            = []
+    BLUE            = []
+    PURPLE          = []
+    constant_colors = [BLACK, WHITE, GREY, RED, ORANGE, YELLOW, GREEN, AQUA, BLUE, PURPLE]
 
     for y in range(y_top, y_bot):
         for x in range(width):
@@ -111,33 +137,28 @@ def colorizer(y_top, y_bot, width, img, bg_color):
                 else:                          # full circle
                     RED.append([y,x])          # back to Red
 
+    size = 0
+    for color_const in constant_colors:
+        size += len(color_const)
+    size -= len(eval(bg_color.upper())) if bg_color else 0
 
-    average_black  = average_color(BLACK,  img)
-    average_white  = average_color(WHITE,  img)
-    average_grey   = average_color(GREY,   img)
-    average_red    = average_color(RED,    img)
-    average_orange = average_color(ORANGE, img)
-    average_yellow = average_color(YELLOW, img)
-    average_green  = average_color(GREEN,  img)
-    average_aqua   = average_color(AQUA,   img)
-    average_blue   = average_color(BLUE,   img)
-    average_purple = average_color(PURPLE, img)
+    #                 BLACK     WHITE         GREY         RED       ORANGE      YELLOW     GREEN      AQUA       BLUE       PURPLE
+    b_g_r_colors = [[0,0,0],[255,255,255],[100,100,100],[0,0,255],[0,200,255],[0,255,255],[0,255,0],[255,255,0],[255,0,0],[255,0,200]]
 
-
-    size = len(BLACK)+len(WHITE)+len(GREY)+len(RED)+len(ORANGE)+len(YELLOW)+len(AQUA)+len(BLUE)+len(PURPLE)+len(GREEN) - ( len(eval(bg_color.upper())) if bg_color else 0 )
-
-    colors = {
-        'black':  [round((float(len(BLACK))/float(size))*100, 1),  len(BLACK),  average_black, [0,0,0]],
-        'white':  [round((float(len(WHITE))/float(size))*100, 1),  len(WHITE),  average_white, [255,255,255]],
-        'grey':   [round((float(len(GREY))/float(size))*100, 1),   len(GREY),   average_grey, [100,100,100]],
-        'red':    [round((float(len(RED))/float(size))*100, 1),    len(RED),    average_red, [0,0,255]],
-        'orange': [round((float(len(ORANGE))/float(size))*100, 1), len(ORANGE), average_orange, [0,200,255]],
-        'yellow': [round((float(len(YELLOW))/float(size))*100, 1), len(YELLOW), average_yellow, [0,255,255]],
-        'green':  [round((float(len(GREEN))/float(size))*100, 1),  len(GREEN),  average_green, [0,255,0]],
-        'aqua':   [round((float(len(AQUA))/float(size))*100, 1),   len(AQUA),   average_aqua, [255,255,0]],
-        'blue':   [round((float(len(BLUE))/float(size))*100, 1),   len(BLUE),   average_blue, [255,0,0]],
-        'purple': [round((float(len(PURPLE))/float(size))*100, 1), len(PURPLE), average_purple, [255,0,200]]
-    }
+    colors = {}
+    for color_list in zip(all_colors, constant_colors, b_g_r_colors):
+        # color_list[0] - color name, string
+        # color_list[1] - color const, (BLACK), list
+        # color_list[2] - b-g-r color
+        colors.update({
+            color_list[0]: [
+                             round((float(len(color_list[1]))/float(size))*100, 1) if float(size) != 0 else 0, \
+                             len(color_list[1]), \
+                             average_color(color_list[1], img), \
+                             color_list[2], \
+                             [sum(i) for i in zip(*color_list[1])][0] / len(color_list[1]) if len(color_list[1]) != 0 else []
+                           ]
+                      })
 
     if bg_color:
         del(colors[bg_color.lower()])
@@ -178,7 +199,9 @@ if contour == 'contour':
 
 
 def is_similar_color(comparable_color_name, benchmark_color_name):
-    if ((-15 <= (comparable_color_name[0] - benchmark_color_name[0]) <= 15) and (-15 <= (comparable_color_name[1] - benchmark_color_name[1]) <= 15) and (-15 <= (comparable_color_name[2] - benchmark_color_name[2]) <= 15)):
+    if (( math.fabs((comparable_color_name[0] - benchmark_color_name[0])) <= 15) and \
+        ( math.fabs((comparable_color_name[1] - benchmark_color_name[1])) <= 15) and \
+        ( math.fabs((comparable_color_name[2] - benchmark_color_name[2])) <= 15)):
         return True
     else:
         return False
@@ -186,7 +209,9 @@ def is_similar_color(comparable_color_name, benchmark_color_name):
 
 def is_skin_color(color_b_g_r):
     skin_color = [140, 160, 210]
-    if ((-25 <= color_b_g_r[0] - skin_color[0] <= 25) and (-25 <= color_b_g_r[1] - skin_color[1] <= 25) and (-25 <= color_b_g_r[2] - skin_color[2] <= 25)):
+    if ((math.fabs((color_b_g_r[0] - skin_color[0])) <= 25) and \
+        (math.fabs((color_b_g_r[1] - skin_color[1])) <= 25) and \
+        (math.fabs((color_b_g_r[2] - skin_color[2])) <= 25)):
         return True
     else:
         return False
@@ -245,7 +270,7 @@ for x, y, w, h in [list(body_rect)]:
 
 
     height_till_belt   = int(round(head_height*2.9))
-    height_till_shoes  = int(round(head_height*6.8))
+    height_till_shoes  = int(round(head_height*5.7))
     y_coordinate_belt  = y + height_till_belt
     y_coordinate_shoes = y + height_till_shoes
 
@@ -266,6 +291,10 @@ for x, y, w, h in [list(body_rect)]:
 
     padding_top = 28
 
+    remain_color_top    = []
+    remain_color_bottom = []
+    remain_color_shoes  = []
+
     for color_obj in sort_top:
 
         cv2.line(img, (1, y), (img_width, y), (114, 255, 0), 1)
@@ -278,6 +307,7 @@ for x, y, w, h in [list(body_rect)]:
         else:
             cv2.circle(img, (img_width-22, y+padding_top), 10, (180, 250, 255), -1)
             cv2.circle(img, (img_width-22, y+padding_top), 8, top[k][2], -1)
+            remain_color_top.append({k: [{'%': top[k][0]}, {'avr-bgr': top[k][2]}, {'avr-y': top[k][4]}]})
             padding_top += 26
 
     if sort_bottom:
@@ -293,6 +323,7 @@ for x, y, w, h in [list(body_rect)]:
             else:
                 cv2.circle(img, (img_width-22, y_coordinate_belt + padding_top), 10, (180, 250, 255), -1)
                 cv2.circle(img, (img_width-22, y_coordinate_belt + padding_top), 8, bottom[k][2], -1)
+                remain_color_bottom.append({k: [{'%': bottom[k][0]}, {'avr-bgr': bottom[k][2]}, {'avr-y': bottom[k][4]}]})
                 padding_top += 26
 
     if sort_shoes:
@@ -307,12 +338,20 @@ for x, y, w, h in [list(body_rect)]:
             else:
                 cv2.circle(img, (img_width-22, y_coordinate_shoes + padding_top), 10, (180, 250, 255), -1)
                 cv2.circle(img, (img_width-22, y_coordinate_shoes + padding_top), 8, shoes[k][2], -1)
+                remain_color_shoes.append({k: [{'%': shoes[k][0]}, {'avr-bgr': shoes[k][2]}, {'avr-y': shoes[k][4]}]})
                 padding_top += 26
 
     for x1, y1, x2, y2 in [np.array(face_rect.tolist()[0])]:
         cv2.rectangle(img, (x1, y1), (x2, y2), (127, 255, 0), 1)
 
     cv2.imwrite(str(img_path), img)
+
+data_response = {
+    'TOP': remain_color_top,
+    'BOTTOM': remain_color_bottom,
+    'SHOES': remain_color_shoes
+}
+print data_response
 
 #    file = open('/Users/tom/work/recognition-images/test11.txt', 'w')
 #    file.write(str(top))

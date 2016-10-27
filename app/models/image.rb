@@ -5,7 +5,7 @@ class Image < ApplicationRecord
   
   # after_create :update_colorizer_json
   
-  private 
+  private
   
   # def update_colorizer_json
   #   #TODO для прода заменить 73b8f04f.ngrok.io на root_path
